@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-  
+
   // Get the pathname from the URL
   const { pathname } = new URL(request.url);
 

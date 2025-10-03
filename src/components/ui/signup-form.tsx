@@ -112,11 +112,7 @@ export function SignupForm({
                   <FormItem>
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input
-                        type="text"
-                        placeholder="John Doe"
-                        {...field}
-                      />
+                      <Input type="text" placeholder="John Doe" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -190,7 +186,9 @@ export function SignupForm({
                           variant="ghost"
                           size="sm"
                           className="absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
                         >
                           {showConfirmPassword ? (
                             <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -198,7 +196,9 @@ export function SignupForm({
                             <Eye className="h-4 w-4" aria-hidden="true" />
                           )}
                           <span className="sr-only">
-                            {showConfirmPassword ? "Hide password" : "Show password"}
+                            {showConfirmPassword
+                              ? "Hide password"
+                              : "Show password"}
                           </span>
                         </Button>
                       </div>

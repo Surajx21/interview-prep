@@ -11,6 +11,7 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { db } from "@/server/db";
+import { auth } from "@/lib/auth";
 
 /**
  * 1. CONTEXT
@@ -104,3 +105,22 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  * are logged in.
  */
 export const publicProcedure = t.procedure.use(timingMiddleware);
+
+const isAuthed = t.middleware(async ({ next, ctx }) => {
+  const session = await auth.api.getSession({ headers: ctx.headers });
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      session,
+    },
+  });
+});
+
+export const protectedProcedureBase = t.procedure
+  .use(timingMiddleware)
+  .use(isAuthed);

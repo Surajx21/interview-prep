@@ -1,0 +1,100 @@
+"use client";
+import type { InterviewSession } from "@/server/db/schema";
+import { api } from "@/trpc/react";
+import Link from "next/link";
+import { Skeleton } from "../skeleton";
+import { Calendar, Clock } from "lucide-react";
+
+function SidebarHistory() {
+  const { data: history, isLoading } =
+    api.interview.getInterviewHistory.useQuery();
+  if (isLoading) return <Skeleton className="h-full w-full rounded-md" />;
+
+  if (!history)
+    return (
+      <div className="text-center text-sm text-gray-500">
+        No interview history found.
+      </div>
+    );
+
+  return (
+    <div className="space-y-2">
+      {history.map((item) => (
+        <ChatBoxItem key={item.id} {...item} />
+      ))}
+    </div>
+  );
+}
+
+const ChatBoxItem = ({
+  id,
+  difficulty,
+  language,
+  type,
+  startedAt,
+  isCompleted,
+}: InterviewSession) => {
+  return (
+    <Link href={`/chat/${id}`} className="inline-block w-full">
+      <div className="bg-accent text-accent-foreground hover:border-primary hover:bg-primary/5 border-primary flex cursor-pointer flex-col gap-3 rounded-md border-1 p-4 transition-all duration-100">
+        {/* Content */}
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          {/* Left side icon */}
+          <div className="flex-shrink-0">
+            <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-md">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                className="text-primary"
+              >
+                <path
+                  d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2h3a1 1 0 011 1v11a3 3 0 01-3 3H7a3 3 0 01-3-3V7a1 1 0 011-1h3z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+          </div>
+          {/* Title */}
+          <div className="w-full space-y-1">
+            <div className="truncate text-sm font-medium">
+              {type.charAt(0).toUpperCase() + type.slice(1)} Interview
+            </div>
+            <div className="text-muted-foreground text-xs">
+              {language} - {difficulty}
+            </div>
+          </div>
+        </div>
+
+        {/* Date */}
+        <div className="flex items-center justify-between">
+          <div className="text-muted-foreground flex items-center gap-1 text-xs">
+            <Calendar className="size-3" />
+            {new Date(startedAt).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </div>
+          <div>
+            {isCompleted ? (
+              <div className="rounded-lg bg-emerald-100 px-2 py-1 text-xs text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+                Completed
+              </div>
+            ) : (
+              <div className="text-muted-foreground flex items-center gap-1 text-xs">
+                <Clock className="size-3" /> In Progress
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+};
+
+export default SidebarHistory;

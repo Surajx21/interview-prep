@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -7,15 +6,15 @@ import {
   SidebarHeader,
   SidebarMenu,
 } from "@/components/ui/sidebar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip";
-import { PlusIcon } from "lucide-react";
-import Logo from "../layout/header/logo";
+import NewInterviewButton from "./new-interview-button";
+import Logo from "../../layout/header/logo";
+import SidebarHistory from "./sidebar-history";
 
 export function AppSidebar() {
   return (
     <Sidebar className="group-data-[side=left]:border-r-1">
       <SidebarHeader className="p-0">
-        <SidebarMenu className="flex h-16 justify-center border-b p-0 pl-4">
+        <SidebarMenu className="flex h-[4.05rem] justify-center border-b p-0 pl-4">
           <div className="flex items-center gap-3">
             <Link href="/" className="text-primary hover:text-primary/90">
               <Logo />
@@ -27,20 +26,12 @@ export function AppSidebar() {
           </div>
         </SidebarMenu>
         <SidebarMenu className="flex h-16 justify-center border-b p-4">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button>
-                <PlusIcon />
-                <span className="ml-2">New Interview</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>Start a new Interview</p>
-            </TooltipContent>
-          </Tooltip>
+          <NewInterviewButton />
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>{/* <SidebarHistory user={user} /> */}</SidebarContent>
+      <SidebarContent className="p-4">
+        <SidebarHistory />
+      </SidebarContent>
       <SidebarFooter>
         <div className="border-t p-4">
           <div className="text-center">

@@ -1,4 +1,11 @@
-import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  boolean,
+  uuid,
+  pgEnum,
+} from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -62,3 +69,46 @@ export const verification = pgTable("verification", {
 });
 
 export const authSchema = { user, session, account, verification };
+
+// Interview History Schema - Enums
+export const interviewTypeEnum = pgEnum("interview_type", [
+  "technical",
+  "hr",
+  "aptitude",
+]);
+export const interviewDifficultyEnum = pgEnum("interview_difficulty", [
+  "easy",
+  "medium",
+  "hard",
+]);
+export const interviewLanguageEnum = pgEnum("interview_language", [
+  "javascript",
+  "python",
+  "java",
+  "cpp",
+  "react",
+  "nodejs",
+  "sql",
+  "system-design",
+]);
+
+export const interviewSession = pgTable("interview_session", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  type: interviewTypeEnum("type").notNull(),
+  language: interviewLanguageEnum("language").notNull(),
+  difficulty: interviewDifficultyEnum("difficulty").notNull(),
+  isCompleted: boolean("is_completed").default(false).notNull(),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  endedAt: timestamp("ended_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export type InterviewSession = typeof interviewSession.$inferSelect;
+export type NewInterviewSession = typeof interviewSession.$inferInsert;

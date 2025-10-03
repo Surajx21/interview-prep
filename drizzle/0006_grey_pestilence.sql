@@ -1,0 +1,1 @@
+ALTER TABLE "interview_session" ADD COLUMN "is_completed" boolean DEFAULT false NOT NULL;
