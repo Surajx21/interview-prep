@@ -1,7 +1,6 @@
-import Link from "next/link";
-import Logo from "./logo";
 import ThemeToggle from "./theme-toggle";
 import UserMenu from "./user-menu";
+import { SidebarToggle } from "@/components/ui/sidebar-toggle";
 
 export default function Header() {
   return (
@@ -10,10 +9,7 @@ export default function Header() {
         {/* Left side */}
         <div className="flex flex-1 items-center gap-2">
           <div className="flex items-center gap-6">
-            {/* Logo */}
-            <Link href="/" className="text-primary hover:text-primary/90">
-              <Logo />
-            </Link>
+            <SidebarToggle />
           </div>
         </div>
         {/* Right side */}
