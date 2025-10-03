@@ -3,7 +3,7 @@ import React from "react";
 
 function Page() {
   return (
-    <div className="bg-background flex h-[calc(100vh-4rem)] flex-1 items-center justify-center">
+    <div className="bg-background flex h-full flex-1 items-center justify-center">
       <div className="max-w-md space-y-6 text-center">
         <div className="bg-primary/10 text-primary mx-auto flex h-20 w-20 items-center justify-center rounded-full">
           <Logo />

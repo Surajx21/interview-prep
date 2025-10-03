@@ -4,23 +4,35 @@ import { api } from "@/trpc/react";
 import Link from "next/link";
 import { Skeleton } from "../skeleton";
 import { Calendar, Clock } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 function SidebarHistory() {
   const { data: history, isLoading } =
     api.interview.getInterviewHistory.useQuery();
-  if (isLoading) return <Skeleton className="h-full w-full rounded-md" />;
 
-  if (!history)
+  const pathname = usePathname();
+  const currentPath = pathname.split("/").pop();
+  if (isLoading)
     return (
-      <div className="text-center text-sm text-gray-500">
-        No interview history found.
+      <>
+        {Array.from({ length: 6 }).map((_, index) => (
+          <Skeleton key={index} className="h-25 w-full rounded-md" />
+        ))}
+      </>
+    );
+
+  if (!history || history.length === 0)
+    return (
+      <div className="text-center text-sm">
+        Start an interview to see history here.
       </div>
     );
 
   return (
     <div className="space-y-2">
       {history.map((item) => (
-        <ChatBoxItem key={item.id} {...item} />
+        <ChatBoxItem key={item.id} {...item} currentPath={currentPath} />
       ))}
     </div>
   );
@@ -33,10 +45,17 @@ const ChatBoxItem = ({
   type,
   startedAt,
   isCompleted,
-}: InterviewSession) => {
+  currentPath,
+}: InterviewSession & { currentPath: string | undefined }) => {
   return (
     <Link href={`/chat/${id}`} className="inline-block w-full">
-      <div className="bg-accent text-accent-foreground hover:border-primary hover:bg-primary/5 border-primary flex cursor-pointer flex-col gap-3 rounded-md border-1 p-4 transition-all duration-100">
+      <div
+        className={cn(
+          "bg-card text-accent-foreground hover:border-primary/70 hover:bg-primary/5 flex cursor-pointer flex-col gap-3 rounded-md border-1 p-4 transition-all duration-100",
+
+          currentPath === id ? "border-primary" : "",
+        )}
+      >
         {/* Content */}
         <div className="flex min-w-0 flex-1 items-center gap-2">
           {/* Left side icon */}
@@ -65,7 +84,7 @@ const ChatBoxItem = ({
               {type.charAt(0).toUpperCase() + type.slice(1)} Interview
             </div>
             <div className="text-muted-foreground text-xs">
-              {language} - {difficulty}
+              {difficulty} - {language}
             </div>
           </div>
         </div>

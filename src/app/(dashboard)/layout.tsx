@@ -13,7 +13,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           <AppSidebar />
           <SidebarInset>
             <Header />
-            <main className="p-8">{children}</main>
+            <div className="px-4 lg:px-8 pt-4 pb-3 h-[calc(100vh-4.5rem)]">{children}</div>
           </SidebarInset>
         </SidebarProvider>
 
