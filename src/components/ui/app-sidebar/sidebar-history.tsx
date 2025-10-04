@@ -17,7 +17,7 @@ function SidebarHistory() {
     return (
       <>
         {Array.from({ length: 6 }).map((_, index) => (
-          <Skeleton key={index} className="h-25 w-full rounded-md" />
+          <Skeleton key={index} className="h-25 w-full rounded-md bg-card dark:bg-accent" />
         ))}
       </>
     );

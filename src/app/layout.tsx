@@ -3,6 +3,7 @@ import { type Metadata } from "next";
 import { TRPCReactProvider } from "@/trpc/react";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ui/theme-provider";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: "Interview Prep",
@@ -16,14 +17,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body>
         <TRPCReactProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-          >
+          <ThemeProvider attribute="class" defaultTheme="dark">
             {children}
           </ThemeProvider>
         </TRPCReactProvider>
         <Toaster />
+        <SpeedInsights />
       </body>
     </html>
   );

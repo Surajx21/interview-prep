@@ -58,7 +58,7 @@ export function MultimodalInput({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             rows={1}
-            className="placeholder:text-muted-foreground  max-h-[140px] min-h-[52px] w-full resize-none overflow-y-auto rounded-xl px-4 py-3 pr-12 text-sm transition-colors outline-none ring-0"
+            className="placeholder:text-muted-foreground max-h-[140px] min-h-[52px] w-full resize-none overflow-y-auto rounded-xl px-4 py-3 pr-12 text-sm ring-0 transition-colors outline-none"
             aria-label="Message input"
           />
         </div>
@@ -67,7 +67,7 @@ export function MultimodalInput({
           onClick={handleSendMessage}
           disabled={!hasText || buttonDisabled}
           aria-label="Send message"
-          className={`absolute z-10 right-3 bottom-3 h-10 w-10 rounded-full p-0 transition-transform duration-150 ${hasText ? "bg-primary text-primary-foreground hover:scale-105 active:scale-95" : "bg-muted text-muted-foreground"} `}
+          className={`absolute right-3 bottom-3 z-10 h-10 w-10 rounded-full p-0 transition-transform duration-150 ${hasText ? "bg-primary text-primary-foreground hover:scale-105 active:scale-95" : "bg-muted text-muted-foreground"} `}
         >
           <ArrowUp className="size-5 stroke-3" />
         </Button>
