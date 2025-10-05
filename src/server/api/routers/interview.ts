@@ -1,10 +1,10 @@
-import { createTRPCRouter, protectedProcedureBase } from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { interviewSession } from "@/server/db/schema";
 import { desc, eq } from "drizzle-orm";
 import z from "zod/v4";
 
 export const interviewRouter = createTRPCRouter({
-  startInterview: protectedProcedureBase
+  startInterview: protectedProcedure
     .input(
       z.object({
         difficulty: z.enum(["easy", "medium", "hard"]),
@@ -38,7 +38,7 @@ export const interviewRouter = createTRPCRouter({
       };
     }),
 
-  getInterviewHistory: protectedProcedureBase.query(async ({ ctx }) => {
+  getInterviewHistory: protectedProcedure.query(async ({ ctx }) => {
     const result = await ctx.db
       .select()
       .from(interviewSession)
@@ -47,4 +47,19 @@ export const interviewRouter = createTRPCRouter({
 
     return result;
   }),
+
+  getInterviewSession: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      const result = await ctx.db
+        .select()
+        .from(interviewSession)
+        .where(eq(interviewSession.id, input.id));
+
+      return result[0];
+    }),
 });
