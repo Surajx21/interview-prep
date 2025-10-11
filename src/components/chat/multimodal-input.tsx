@@ -21,9 +21,9 @@ export function MultimodalInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSendMessage = () => {
-    const value = input.trim();
-    if (!value || buttonDisabled) return;
-    onSendMessage(value);
+    // Only trim to check if empty, but send the actual content with newlines
+    if (!input.trim() || buttonDisabled) return;
+    onSendMessage(input);
     setInput("");
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -31,7 +31,18 @@ export function MultimodalInput({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter") {
+      // Don't submit if IME composition is in progress
+      if (e.nativeEvent.isComposing) {
+        return;
+      }
+
+      if (e.shiftKey) {
+        // Allow newline with Shift+Enter
+        return;
+      }
+
+      // Submit on Enter (without Shift)
       e.preventDefault();
       handleSendMessage();
     }
@@ -58,7 +69,8 @@ export function MultimodalInput({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             rows={1}
-            className="placeholder:text-muted-foreground max-h-[140px] min-h-[52px] w-full resize-none overflow-y-auto rounded-xl px-4 py-3 pr-12 text-sm ring-0 transition-colors outline-none"
+            disabled={buttonDisabled}
+            className="placeholder:text-muted-foreground max-h-[140px] min-h-[52px] w-full resize-none overflow-y-auto rounded-xl px-4 py-3 pr-12 text-sm ring-0 transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-60"
             aria-label="Message input"
           />
         </div>

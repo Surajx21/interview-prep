@@ -5,50 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1759428647845,
-      "tag": "0000_naive_gertrude_yorkes",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1759431732960,
-      "tag": "0001_nice_pride",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1759493788331,
-      "tag": "0002_flimsy_freak",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1759495007218,
-      "tag": "0003_damp_fallen_one",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1759495118388,
-      "tag": "0004_skinny_sleepwalker",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1759495218714,
-      "tag": "0005_loose_purifiers",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1759496393840,
-      "tag": "0006_grey_pestilence",
+      "when": 1760117219276,
+      "tag": "0000_orange_paibok",
       "breakpoints": true
     }
   ]

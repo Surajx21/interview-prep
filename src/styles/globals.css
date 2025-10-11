@@ -73,15 +73,15 @@
   --popover-foreground: oklch(0.9843 0.0017 247.8393);
   --primary: oklch(0.6723 0.1606 244.9955);
   --primary-foreground: oklch(0.9843 0.0017 247.8393);
-  --secondary: oklch(0.28 0.0369 259.974);
+  --secondary: oklch(0.2895 0.0387 259.9677);
   --secondary-foreground: oklch(0.9843 0.0017 247.8393);
   --muted: oklch(0.28 0.0369 259.974);
   --muted-foreground: oklch(0.7107 0.0351 256.7877);
-  --accent: oklch(0.28 0.0369 259.974);
+  --accent: oklch(0.3037 0.0413 259.9592);
   --accent-foreground: oklch(0.9843 0.0017 247.8393);
   --destructive: oklch(0.3959 0.1331 25.7205);
   --destructive-foreground: oklch(0.9843 0.0017 247.8393);
-  --border: oklch(0.28 0.0369 259.974);
+  --border: oklch(0.3223 0.0448 259.9494);
   --input: oklch(0.28 0.0369 259.974);
   --ring: oklch(0.6723 0.1606 244.9955);
   --chart-1: oklch(0.6723 0.1606 244.9955);
@@ -93,9 +93,9 @@
   --sidebar-foreground: oklch(0.9843 0.0017 247.8393);
   --sidebar-primary: oklch(0.6723 0.1606 244.9955);
   --sidebar-primary-foreground: oklch(0.9843 0.0017 247.8393);
-  --sidebar-accent: oklch(0.28 0.0369 259.974);
+  --sidebar-accent: oklch(0.3037 0.0413 259.9592);
   --sidebar-accent-foreground: oklch(0.9843 0.0017 247.8393);
-  --sidebar-border: oklch(0.28 0.0369 259.974);
+  --sidebar-border: oklch(0.3223 0.0448 259.9494);
   --sidebar-ring: oklch(0.6723 0.1606 244.9955);
   --font-sans: ui-sans-serif, system-ui, sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
@@ -183,6 +183,23 @@
   --tracking-wider: calc(var(--tracking-normal) + 0.05em);
   --tracking-widest: calc(var(--tracking-normal) + 0.1em);
 }
+
+@theme inline {
+  --animate-blink: blink 1s ease-in-out infinite;
+
+  @keyframes blink {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.3;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -192,7 +209,7 @@
     letter-spacing: var(--tracking-normal);
   }
 
-  [data-sonner-toaster][data-sonner-theme=dark] [data-description] {
+  [data-sonner-toaster][data-sonner-theme="dark"] [data-description] {
     color: var(--color-secondary-foreground) !important;
   }
 }

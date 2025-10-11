@@ -3,15 +3,18 @@ import type { InterviewSession } from "@/server/db/schema";
 import { api } from "@/trpc/react";
 import Link from "next/link";
 import { Skeleton } from "../skeleton";
-import { Calendar, Clock } from "lucide-react";
+import { Calendar, CheckCircle, Clock } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import type { Route } from "next";
+import { useSidebar } from "../sidebar";
 
 function SidebarHistory() {
   const { data: history, isLoading } =
     api.interview.getInterviewHistory.useQuery();
 
   const pathname = usePathname();
+  const { toggleSidebar } = useSidebar();
   const currentPath = pathname.split("/").pop();
   if (isLoading)
     return (
@@ -32,7 +35,12 @@ function SidebarHistory() {
   return (
     <div className="space-y-2">
       {history.map((item) => (
-        <ChatBoxItem key={item.id} {...item} currentPath={currentPath} />
+        <ChatBoxItem
+          key={item.id}
+          {...item}
+          currentPath={currentPath}
+          toggleSidebar={toggleSidebar}
+        />
       ))}
     </div>
   );
@@ -46,9 +54,17 @@ const ChatBoxItem = ({
   startedAt,
   isCompleted,
   currentPath,
-}: InterviewSession & { currentPath: string | undefined }) => {
+  toggleSidebar,
+}: InterviewSession & {
+  currentPath: string | undefined;
+  toggleSidebar: () => void;
+}) => {
   return (
-    <Link href={`/chat/${id}`} className="inline-block w-full">
+    <Link
+      href={`/chat/${id}` as Route}
+      className="inline-block w-full"
+      onClick={toggleSidebar}
+    >
       <div
         className={cn(
           "bg-card text-accent-foreground hover:border-primary/70 hover:bg-primary/5 flex cursor-pointer flex-col gap-3 rounded-md border-1 p-4 transition-all duration-100",
@@ -101,7 +117,8 @@ const ChatBoxItem = ({
           </div>
           <div>
             {isCompleted ? (
-              <div className="rounded-lg bg-emerald-100 px-2 py-1 text-xs text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+              <div className="flex items-center gap-1 rounded-lg bg-emerald-100 px-2 py-1 text-xs text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+                <CheckCircle className="size-3" />
                 Completed
               </div>
             ) : (

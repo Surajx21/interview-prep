@@ -73,6 +73,7 @@ export function SignupForm({
       name: values.name,
       email: values.email,
       password: values.password,
+      image: `https://avatar.iran.liara.run/public/boy?username=${values.name.split(" ").join("")}`,
       fetchOptions: {
         onSuccess: () => {
           toast.success("Account created successfully!");

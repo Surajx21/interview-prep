@@ -25,6 +25,5 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   runtime: "nodejs",
-
-  matcher: ["/", "/chat(.*)", "/profile"],
+  matcher: ["/", "/chat(.*)", "/profile", "/sign-in", "/sign-up"],
 };

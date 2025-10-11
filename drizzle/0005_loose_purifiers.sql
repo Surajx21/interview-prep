@@ -1,1 +1,0 @@
-ALTER TABLE "interview_session" DROP COLUMN "is_active";

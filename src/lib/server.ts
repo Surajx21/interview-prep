@@ -1,6 +1,8 @@
 "use server";
 import { auth } from "@/lib/auth";
+import { api } from "@/trpc/server";
 import { headers } from "next/headers";
+import { type MessageRole } from "@/types";
 
 export const getSession = async () => {
   const session = await auth.api.getSession({
@@ -25,5 +27,17 @@ export const signUp = async (name: string, email: string, password: string) => {
       email,
       password,
     },
+  });
+};
+
+export const insertMessage = async (
+  interviewSessionId: string,
+  content: string,
+  role: MessageRole,
+) => {
+  await api.message.insertMessage({
+    interviewSessionId,
+    content,
+    role: role,
   });
 };

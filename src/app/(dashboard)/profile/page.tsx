@@ -198,14 +198,6 @@ export default function Profile() {
 
               {/* Password Change Section */}
               <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium">Change Password</h4>
-                  <p className="text-muted-foreground text-xs">
-                    Leave password fields empty if you don&apos;t want to change
-                    your password
-                  </p>
-                </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="currentPassword">Current Password</Label>
                   <PasswordInput

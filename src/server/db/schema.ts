@@ -5,6 +5,8 @@ import {
   boolean,
   uuid,
   pgEnum,
+  json,
+  integer,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -92,6 +94,19 @@ export const interviewLanguageEnum = pgEnum("interview_language", [
   "system-design",
 ]);
 
+export const messageRoleEnum = pgEnum("message_role", [
+  "user",
+  "assistant",
+  "system",
+]);
+
+export const verdictEnum = pgEnum("verdict", [
+  "excellent",
+  "good",
+  "average",
+  "needs_improvement",
+]);
+
 export const interviewSession = pgTable("interview_session", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id")
@@ -110,5 +125,88 @@ export const interviewSession = pgTable("interview_session", {
     .notNull(),
 });
 
+// UIMessage parts schema
+export const messagePartTypeEnum = pgEnum("message_part_type", [
+  "text",
+  "reasoning",
+  "source-url",
+  "image",
+  "tool",
+  "tool-result",
+]);
+
+export const messageSchema = pgTable("message", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  uiMessageId: text("ui_message_id").notNull(), // The ID from UIMessage
+  interviewSessionId: uuid("interview_session_id")
+    .notNull()
+    .references(() => interviewSession.id, { onDelete: "cascade" }),
+  role: messageRoleEnum("role").notNull(),
+  parts: json("parts").notNull(), // Array of message parts
+  metadata: json("metadata"), // Optional metadata object
+  sequenceNumber: integer("sequence_number").notNull(), // Order within the conversation
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+// Individual message parts table for better querying
+export const messagePartsSchema = pgTable("message_parts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  messageId: uuid("message_id")
+    .notNull()
+    .references(() => messageSchema.id, { onDelete: "cascade" }),
+  type: messagePartTypeEnum("type").notNull(),
+  content: text("content").notNull(),
+  order: integer("order").notNull(), // Order of parts within the message
+  metadata: json("metadata"), // Additional metadata for specific part types
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Interview Result Schema
+export const interviewResult = pgTable("interview_result", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  interviewSessionId: uuid("interview_session_id")
+    .notNull()
+    .unique()
+    .references(() => interviewSession.id, { onDelete: "cascade" }),
+  accuracyScore: integer("accuracy_score").notNull(), // 0-100
+  communicationScore: integer("communication_score").notNull(), // 0-100
+  problemSolvingScore: integer("problem_solving_score").notNull(), // 0-100
+  consistencyScore: integer("consistency_score").notNull(), // 0-100
+  overallScore: integer("overall_score").notNull(), // 0-100
+  performanceSummary: text("performance_summary").notNull(), // 3-5 sentences
+  verdict: verdictEnum("verdict").notNull(), // excellent | good | average | needs_improvement
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+// TypeScript types
 export type InterviewSession = typeof interviewSession.$inferSelect;
 export type NewInterviewSession = typeof interviewSession.$inferInsert;
+export type Message = typeof messageSchema.$inferSelect;
+export type NewMessage = typeof messageSchema.$inferInsert;
+export type MessagePart = typeof messagePartsSchema.$inferSelect;
+export type NewMessagePart = typeof messagePartsSchema.$inferInsert;
+export type InterviewResult = typeof interviewResult.$inferSelect;
+export type NewInterviewResult = typeof interviewResult.$inferInsert;
+
+// UIMessage types for better type safety
+export interface UIMessagePart {
+  type: "text" | "reasoning" | "source-url" | "image" | "tool" | "tool-result";
+  text?: string;
+  url?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface UIMessage {
+  id: string;
+  role: "user" | "assistant" | "system";
+  parts: UIMessagePart[];
+  metadata?: Record<string, unknown>;
+}

@@ -28,6 +28,8 @@ import type {
 } from "@/types";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
+import type { Route } from "next";
+import { useSidebar } from "../ui/sidebar";
 
 const BrainIcon = () => (
   <svg
@@ -204,6 +206,10 @@ export function InterviewSetupModal() {
   const utils = api.useUtils();
   const router = useRouter();
   const startInterviewMutation = api.interview.startInterview.useMutation();
+  const { closeInterviewSetupModal, isInterviewSetupModalOpen, openErrorModal } =
+    useChatContext();
+
+    const { toggleSidebar } = useSidebar();
 
   const handleStart = async () => {
     if (config.language && config.difficulty && config.type) {
@@ -225,27 +231,29 @@ export function InterviewSetupModal() {
 
         toast.success("Interview session created successfully!");
 
-        closeInterviewSetupModal();
         setConfig({ language: "", difficulty: "", type: "" });
 
-        router.push(`/chat/${result.sessionId}`);
+        closeInterviewSetupModal();
+        toggleSidebar();
+        router.push(`/chat/${result.sessionId}` as Route);
       } catch (error) {
         toast.dismiss();
-        toast.error("Failed to create interview session. Please try again.");
+        const errorMessage = error instanceof Error 
+          ? error.message 
+          : "Failed to create interview session. Please try again.";
+        openErrorModal(errorMessage);
         console.error("Error creating interview session:", error);
       }
     }
   };
 
   const isValid = config.language && config.difficulty && config.type;
-  const { closeInterviewSetupModal, isInterviewSetupModalOpen } =
-    useChatContext();
   return (
     <Dialog
       open={isInterviewSetupModalOpen}
       onOpenChange={closeInterviewSetupModal}
     >
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto w-[90vw]">
         <DialogHeader>
           <DialogTitle className="text-center text-xl font-semibold">
             Start New Interview Session
