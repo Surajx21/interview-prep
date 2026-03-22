@@ -35,12 +35,8 @@ export function AppSidebar() {
       <SidebarFooter>
         <div className="border-t p-4">
           <div className="text-center">
-            <p className="text-xs font-medium text-gray-400">
-              Practice makes perfect
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Keep improving your skills
-            </p>
+            <p className="text-xs font-bold">Practice makes perfect</p>
+            <p className="mt-1 text-xs">Keep improving your skills</p>
           </div>
         </div>
       </SidebarFooter>

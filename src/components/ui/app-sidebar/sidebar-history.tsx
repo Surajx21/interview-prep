@@ -117,7 +117,7 @@ const ChatBoxItem = ({
           </div>
           <div>
             {isCompleted ? (
-              <div className="flex items-center gap-1 rounded-lg bg-emerald-100 px-2 py-1 text-xs text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+              <div className="bg-secondary text-foreground flex items-center gap-1 rounded-lg px-2 py-1 text-xs">
                 <CheckCircle className="size-3" />
                 Completed
               </div>
