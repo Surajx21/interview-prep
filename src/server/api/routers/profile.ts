@@ -4,7 +4,6 @@ import { eq } from "drizzle-orm";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { user } from "@/server/db/schema";
 import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 
 export const profileRouter = createTRPCRouter({
   get: protectedProcedure.query(async ({ ctx }) => {
@@ -87,7 +86,7 @@ export const profileRouter = createTRPCRouter({
               currentPassword,
               revokeOtherSessions: true,
             },
-            headers: await headers(),
+            headers: ctx.headers,
           });
           shouldRedirectToSignIn = true;
         } catch {
