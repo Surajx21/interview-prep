@@ -1,5 +1,4 @@
 import Logo from "@/components/layout/header/logo";
-import React from "react";
 
 function Page() {
   return (

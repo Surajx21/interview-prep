@@ -7,8 +7,8 @@ import {
   SidebarMenu,
 } from "@/components/ui/sidebar";
 import NewInterviewButton from "./new-interview-button";
-import Logo from "../../layout/header/logo";
 import SidebarHistory from "./sidebar-history";
+import Logo from "@/components/layout/header/logo";
 
 export function AppSidebar() {
   return (
