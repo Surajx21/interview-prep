@@ -1,6 +1,9 @@
 import { auth } from "@/lib/auth";
 import { env } from "@/env";
 import { api } from "@/trpc/server";
+import { db } from "@/server/db";
+import { interviewSession } from "@/server/db/schema";
+import { eq } from "drizzle-orm";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
 import { headers } from "next/headers";
@@ -81,6 +84,20 @@ export async function POST(req: Request) {
       return new Response("Missing interview session ID", { status: 400 });
     }
 
+    // Verify the session belongs to the authenticated user
+    const sessionRows = await db
+      .select({ userId: interviewSession.userId })
+      .from(interviewSession)
+      .where(eq(interviewSession.id, interviewSessionId));
+
+    if (!sessionRows[0]) {
+      return new Response("Interview session not found", { status: 404 });
+    }
+
+    if (sessionRows[0].userId !== session.user.id) {
+      return new Response("Forbidden", { status: 403 });
+    }
+
     // Save user message to database
     const userMessages = messages.filter((msg) => msg.role === "user");
     if (userMessages.length > 0) {
@@ -98,7 +115,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // return new Response("Invalid request body", { status: 400 });
     const gateway = createGateway({
       apiKey: env.AI_GATEWAY_API_KEY,
     });

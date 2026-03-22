@@ -667,10 +667,12 @@ const SidebarMenuSkeleton = React.forwardRef<
     showIcon?: boolean;
   }
 >(({ className, showIcon = false, ...props }, ref) => {
-  // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`;
-  }, []);
+  // Random width between 50 to 90% — computed once via ref so it's stable
+  // across re-renders. The eslint-disable is intentional: this is a one-time
+  // initialization that only runs on mount, not on every render.
+  // eslint-disable-next-line react-hooks/purity
+  const widthRef = React.useRef(`${Math.floor(Math.random() * 40) + 50}%`);
+  const width = widthRef.current;
 
   return (
     <div

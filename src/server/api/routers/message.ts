@@ -1,24 +1,21 @@
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { messageSchema, messagePartsSchema, type UIMessage } from "@/server/db/schema";
 import { asc, eq, max } from "drizzle-orm";
+import type { db as dbType } from "@/server/db";
 import z from "zod/v4";
+
+type Db = typeof dbType;
 
 // Helper function to get the next sequence number for an interview session
 async function getNextSequenceNumber(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  db: any,
-  interviewSessionId: string
+  db: Db,
+  interviewSessionId: string,
 ): Promise<number> {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
   const [maxSequenceResult] = await db
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     .select({ maxSeq: max(messageSchema.sequenceNumber) })
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     .from(messageSchema)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     .where(eq(messageSchema.interviewSessionId, interviewSessionId));
-  
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+
   return (maxSequenceResult?.maxSeq ?? 0) + 1;
 }
 
@@ -111,7 +108,7 @@ export const messageRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       // Get the next sequence number for this interview session
       const nextSequenceNumber = await getNextSequenceNumber(ctx.db, input.interviewSessionId);
-      const uiMessageId = `legacy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const uiMessageId = `legacy-${crypto.randomUUID()}`;
       
       const [message] = await ctx.db
         .insert(messageSchema)

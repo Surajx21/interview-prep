@@ -1,6 +1,7 @@
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { interviewSession, interviewResult } from "@/server/db/schema";
 import { desc, eq } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import z from "zod/v4";
 
 export const interviewRouter = createTRPCRouter({
@@ -60,7 +61,17 @@ export const interviewRouter = createTRPCRouter({
         .from(interviewSession)
         .where(eq(interviewSession.id, input.id));
 
-      return result[0];
+      const session = result[0];
+
+      if (!session) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Interview session not found" });
+      }
+
+      if (session.userId !== ctx.session.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+      }
+
+      return session;
     }),
 
   saveInterviewResult: protectedProcedure
@@ -77,57 +88,63 @@ export const interviewRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      // Check if result already exists
-      const existing = await ctx.db
-        .select()
-        .from(interviewResult)
-        .where(eq(interviewResult.interviewSessionId, input.interviewSessionId));
+      return await ctx.db.transaction(async (tx) => {
+        // Check if result already exists
+        const existing = await tx
+          .select()
+          .from(interviewResult)
+          .where(eq(interviewResult.interviewSessionId, input.interviewSessionId));
 
-      if (existing.length > 0) {
-        // Update existing result
-        const updated = await ctx.db
-          .update(interviewResult)
+        let savedResult;
+
+        if (existing.length > 0) {
+          // Update existing result
+          const updated = await tx
+            .update(interviewResult)
+            .set({
+              accuracyScore: input.accuracyScore,
+              communicationScore: input.communicationScore,
+              problemSolvingScore: input.problemSolvingScore,
+              consistencyScore: input.consistencyScore,
+              overallScore: input.overallScore,
+              performanceSummary: input.performanceSummary,
+              verdict: input.verdict,
+              updatedAt: new Date(),
+            })
+            .where(eq(interviewResult.interviewSessionId, input.interviewSessionId))
+            .returning();
+
+          savedResult = updated[0];
+        } else {
+          // Insert new result
+          const result = await tx
+            .insert(interviewResult)
+            .values({
+              interviewSessionId: input.interviewSessionId,
+              accuracyScore: input.accuracyScore,
+              communicationScore: input.communicationScore,
+              problemSolvingScore: input.problemSolvingScore,
+              consistencyScore: input.consistencyScore,
+              overallScore: input.overallScore,
+              performanceSummary: input.performanceSummary,
+              verdict: input.verdict,
+            })
+            .returning();
+
+          savedResult = result[0];
+        }
+
+        // Atomically mark the session as completed
+        await tx
+          .update(interviewSession)
           .set({
-            accuracyScore: input.accuracyScore,
-            communicationScore: input.communicationScore,
-            problemSolvingScore: input.problemSolvingScore,
-            consistencyScore: input.consistencyScore,
-            overallScore: input.overallScore,
-            performanceSummary: input.performanceSummary,
-            verdict: input.verdict,
-            updatedAt: new Date(),
+            isCompleted: true,
+            endedAt: new Date(),
           })
-          .where(eq(interviewResult.interviewSessionId, input.interviewSessionId))
-          .returning();
+          .where(eq(interviewSession.id, input.interviewSessionId));
 
-        return updated[0];
-      }
-
-      // Insert new result
-      const result = await ctx.db
-        .insert(interviewResult)
-        .values({
-          interviewSessionId: input.interviewSessionId,
-          accuracyScore: input.accuracyScore,
-          communicationScore: input.communicationScore,
-          problemSolvingScore: input.problemSolvingScore,
-          consistencyScore: input.consistencyScore,
-          overallScore: input.overallScore,
-          performanceSummary: input.performanceSummary,
-          verdict: input.verdict,
-        })
-        .returning();
-
-      // Update interview session to mark as completed
-      await ctx.db
-        .update(interviewSession)
-        .set({
-          isCompleted: true,
-          endedAt: new Date(),
-        })
-        .where(eq(interviewSession.id, input.interviewSessionId));
-
-      return result[0];
+        return savedResult;
+      });
     }),
 
   getInterviewResult: protectedProcedure

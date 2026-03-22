@@ -91,6 +91,7 @@ export default function UserMenu() {
 
 const LogoutButton = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [open, setOpen] = useState(false);
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -100,6 +101,7 @@ const LogoutButton = () => {
         fetchOptions: {
           onSuccess: () => {
             toast.success("Logged out successfully.");
+            setOpen(false);
             router.push("/sign-in");
           },
         },
@@ -112,7 +114,7 @@ const LogoutButton = () => {
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
           <LogOutIcon size={16} className="opacity-60" aria-hidden="true" />
@@ -133,22 +135,20 @@ const LogoutButton = () => {
               Cancel
             </Button>
           </DialogClose>
-          <DialogClose asChild>
-            <Button
-              variant="destructive"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-            >
-              {isLoggingOut ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Logging out...
-                </>
-              ) : (
-                "Logout"
-              )}
-            </Button>
-          </DialogClose>
+          <Button
+            variant="destructive"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+          >
+            {isLoggingOut ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Logging out...
+              </>
+            ) : (
+              "Logout"
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,7 +1,7 @@
 "use client";
 
 import { MoonIcon, SunIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 
 import { useModeAnimation } from "react-theme-switch-animation";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,11 @@ export default function ThemeToggle() {
     duration: 400,
   });
 
-  // Prevent hydration mismatch by only rendering theme-specific content after mount
-  useEffect(() => {
+  // Prevent hydration mismatch by only rendering theme-specific content after mount.
+  // useLayoutEffect fires synchronously after DOM paint — this is the standard
+  // pattern for SSR-safe mount detection; the setState call is intentional.
+  useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

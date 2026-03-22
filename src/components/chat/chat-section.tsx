@@ -116,8 +116,7 @@ export function ChatSection({ data }: { data: InterviewSession }) {
     const restored: UIMessage[] = oldMessages.map((msg) => ({
       id: msg.id,
       role: msg.role,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
-      parts: msg.parts as any,
+      parts: msg.parts as UIMessage["parts"],
       metadata: msg.metadata,
     }));
 

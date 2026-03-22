@@ -135,18 +135,6 @@ STYLE GUIDE:
 END OF PROMPT
 `;
 
-export const getPrompt = (
-  interviewType: string,
-  difficultyLevel: string,
-  codingLanguage: string,
-  name: string,
-) => {
-  return systemPrompt
-    .replace("{{NAME}}", name)
-    .replace("{{INTERVIEW_TYPE}}", interviewType)
-    .replace("{{DIFFICULTY_LEVEL}}", difficultyLevel)
-    .replace("{{CODING_LANGUAGE}}", codingLanguage);
-};
 
 // Helper function to extract evaluation data from AI response
 export const parseEvaluationData = (text: string) => {

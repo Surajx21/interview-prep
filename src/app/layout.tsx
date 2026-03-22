@@ -28,8 +28,12 @@ const fontMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Interview Prep",
-  description: "Interview Prep",
+  title: {
+    default: "Interview Prep – AI Mock Interviews",
+    template: "%s | Interview Prep",
+  },
+  description:
+    "Practice technical, HR, and aptitude interviews with an AI interviewer. Get instant feedback, scores, and improvement tips.",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 export default function RootLayout({
@@ -43,9 +47,9 @@ export default function RootLayout({
         <TRPCReactProvider>
           <ThemeProvider attribute="class" defaultTheme="dark">
             {children}
+            <Toaster />
           </ThemeProvider>
         </TRPCReactProvider>
-        <Toaster />
         <SpeedInsights />
       </body>
     </html>

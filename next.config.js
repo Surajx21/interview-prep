@@ -6,6 +6,8 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
+  reactStrictMode: true,
+  poweredByHeader: false,
   typedRoutes: true,
   images: {
     remotePatterns: [
@@ -13,7 +15,7 @@ const config = {
         protocol: "https",
         hostname: "avatar.iran.liara.run",
         port: "",
-        pathname: "/**",
+        pathname: "/public/**",
       },
     ],
   },
