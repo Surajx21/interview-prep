@@ -8,6 +8,13 @@
       "when": 1760117219276,
       "tag": "0000_orange_paibok",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1774194266278,
+      "tag": "0001_daily_hellion",
+      "breakpoints": true
     }
   ]
 }

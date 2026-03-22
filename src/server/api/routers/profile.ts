@@ -13,7 +13,6 @@ export const profileRouter = createTRPCRouter({
         name: user.name,
         email: user.email,
         image: user.image,
-        api_key: user.api_key,
         emailVerified: user.emailVerified,
       })
       .from(user)
@@ -27,35 +26,7 @@ export const profileRouter = createTRPCRouter({
       });
     }
 
-    // Remove the api_key property from the returned user profile object
-    const { api_key, ...userProfileWithoutApiKey } = userProfile[0];
-
-    const result = {
-      ...userProfileWithoutApiKey,
-      hasApiKey: api_key !== null && api_key !== "",
-    };
-    return result;
-  }),
-
-  getApiKey: protectedProcedure.query(async ({ ctx }) => {
-    const userApiKey = await ctx.db
-      .select({
-        api_key: user.api_key,
-      })
-      .from(user)
-      .where(eq(user.id, ctx.session.user.id))
-      .limit(1);
-
-    if (!userApiKey[0]) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "User not found",
-      });
-    }
-
-    return {
-      api_key: userApiKey[0].api_key,
-    };
+    return userProfile[0];
   }),
 
   updateProfile: protectedProcedure
@@ -111,26 +82,5 @@ export const profileRouter = createTRPCRouter({
         .where(eq(user.id, ctx.session.user.id));
 
       return { success: true, shouldRedirectToSignIn };
-    }),
-
-  updateApiKey: protectedProcedure
-    .input(
-      z.object({
-        api_key: z.string().min(1, "API key is required"),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { api_key } = input;
-
-      // Update user's API key
-      await ctx.db
-        .update(user)
-        .set({
-          api_key,
-          updatedAt: new Date(),
-        })
-        .where(eq(user.id, ctx.session.user.id));
-
-      return { success: true };
     }),
 });

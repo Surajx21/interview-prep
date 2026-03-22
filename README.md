@@ -59,6 +59,9 @@ DATABASE_URL="postgresql://user:password@localhost:5432/interview_prep"
 # Authentication
 BETTER_AUTH_SECRET="your-secret-key-here"  # Generate with: openssl rand -base64 32
 NEXT_PUBLIC_BETTER_AUTH_URL="http://localhost:3000"
+
+# AI
+AI_GATEWAY_API_KEY="your-ai-gateway-api-key"
 ```
 
 ### 4. Set Up the Database

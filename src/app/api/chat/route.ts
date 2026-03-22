@@ -1,9 +1,9 @@
 import { auth } from "@/lib/auth";
+import { env } from "@/env";
 import { api } from "@/trpc/server";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
 import { headers } from "next/headers";
-// import { createOpenAI } from "@ai-sdk/openai";
 import { createGateway } from "@ai-sdk/gateway";
 
 // Types for the request body
@@ -64,14 +64,6 @@ export async function POST(req: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const { api_key } = await api.profile.getApiKey();
-
-  if (!api_key) {
-    return new Response("Please set your API key in your profile", {
-      status: 401,
-    });
-  }
-
   try {
     const data = (await req.json()) as ChatRequestBody;
 
@@ -108,7 +100,7 @@ export async function POST(req: Request) {
 
     // return new Response("Invalid request body", { status: 400 });
     const gateway = createGateway({
-      apiKey: api_key,
+      apiKey: env.AI_GATEWAY_API_KEY,
     });
 
     const result = streamText({

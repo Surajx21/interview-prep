@@ -47,12 +47,12 @@ function getErrorDetails(error: string | null) {
     errorLower.includes("401")
   ) {
     return {
-      title: "Invalid API Key",
+      title: "AI Configuration Error",
       description:
-        "Your API key is invalid or missing. Please check your API configuration in your profile settings.",
+        "The server-side AI key is invalid or missing. Please check the app environment configuration.",
       icon: Key,
       iconColor: "text-red-500",
-      suggestion: "Go to your profile and verify your API key is correct.",
+      suggestion: "Verify the server AI key and redeploy or restart the app.",
     };
   }
 
@@ -126,4 +126,3 @@ export function ErrorModal() {
 }
 
 export default ErrorModal;
-
