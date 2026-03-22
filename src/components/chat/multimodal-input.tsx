@@ -3,7 +3,7 @@
 import type React from "react";
 
 import { Button } from "@/components/ui/button";
-import { useState, useRef, type KeyboardEvent } from "react";
+import { useState, useRef, useEffect, type KeyboardEvent } from "react";
 import { ArrowUp } from "lucide-react";
 
 interface MultimodalInputProps {
@@ -20,8 +20,14 @@ export function MultimodalInput({
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Restore focus when the input re-enables after AI streaming
+  useEffect(() => {
+    if (!buttonDisabled) {
+      textareaRef.current?.focus();
+    }
+  }, [buttonDisabled]);
+
   const handleSendMessage = () => {
-    // Only trim to check if empty, but send the actual content with newlines
     if (!input.trim() || buttonDisabled) return;
     onSendMessage(input);
     setInput("");

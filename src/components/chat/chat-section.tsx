@@ -1,13 +1,21 @@
 "use client";
-import { MultimodalInput } from "./multimodal-input";
-import React, { Fragment, useEffect, useState } from "react";
+
+import React, { Fragment, useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
-import { api } from "@/trpc/react";
 import { type ChatStatus, type UIMessage } from "ai";
+import { Loader2 } from "lucide-react";
+
+import { api } from "@/trpc/react";
+import { systemPrompt, parseEvaluationData, cn } from "@/lib/utils";
+import { authClient } from "@/lib/auth-client";
+import { type InterviewSession } from "@/server/db/schema";
+import { useChatContext } from "@/contexts/chat-context";
+
+import { MultimodalInput } from "./multimodal-input";
+import ResultsModal from "./result-modal";
 import { Skeleton } from "../ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { systemPrompt, parseEvaluationData } from "@/lib/utils";
-import { type InterviewSession } from "@/server/db/schema";
+import { Button } from "../ui/button";
 import {
   Conversation,
   ConversationContent,
@@ -15,52 +23,66 @@ import {
 } from "../ai-elements/conversation";
 import { Message, MessageContent } from "../ai-elements/message";
 import { Response } from "../ai-elements/response";
-import { Loader2 } from "lucide-react";
-import ResultsModal from "./result-modal";
-import { useChatContext } from "@/contexts/chat-context";
-import { Button } from "../ui/button";
-import { authClient } from "@/lib/auth-client";
+import Logo from "../layout/header/logo";
 
-// Helper function to clean assistant messages for display
+/** Strip interview markers and XML evaluation tags from display text. */
 function cleanMessageForDisplay(text: string): string {
-  let cleanedText = text;
-
-  // Remove the [INTERVIEW_ENDED] marker
-  cleanedText = cleanedText.replace(/\[INTERVIEW_ENDED\]/g, "");
-
-  // Remove ONLY the XML evaluation data block (keep the formatted text above it)
-  cleanedText = cleanedText.replace(
-    /<EVALUATION_DATA>[\s\S]*?<\/EVALUATION_DATA>/gi,
-    "",
-  );
-
-  // Also remove any remaining XML-like tags (both uppercase and lowercase)
-  // This catches standalone tags like <VERDICT>, <ACCURACY_SCORE>, etc.
-  cleanedText = cleanedText.replace(/<\/?[A-Z_]+>/g, "");
-
-  return cleanedText.trim();
+  return text
+    .replace(/\[INTERVIEW_ENDED\]/g, "")
+    .replace(/<EVALUATION_DATA>[\s\S]*?<\/EVALUATION_DATA>/gi, "")
+    .replace(/<\/?[A-Z_]+>/g, "")
+    .trim();
 }
+
+/** Build the system prompt with session-specific values. */
+function buildSystemPrompt(
+  session: InterviewSession,
+  userName: string,
+): string {
+  return systemPrompt
+    .replace("{{NAME}}", userName)
+    .replace("{{INTERVIEW_TYPE}}", session.type)
+    .replace("{{DIFFICULTY_LEVEL}}", session.difficulty)
+    .replace("{{CODING_LANGUAGE}}", session.language);
+}
+
+/** Extract the full text content from a message's parts. */
+function extractTextFromParts(parts: UIMessage["parts"]): string {
+  return parts
+    .filter(
+      (p): p is Extract<UIMessage["parts"][number], { type: "text" }> =>
+        p.type === "text",
+    )
+    .map((p) => p.text)
+    .join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// ChatSection
+// ---------------------------------------------------------------------------
 
 export function ChatSection({ data }: { data: InterviewSession }) {
   const [isInterviewEnded, setIsInterviewEnded] = useState(false);
   const [hasResultsSaved, setHasResultsSaved] = useState(false);
+  const isSavingRef = useRef(false);
+
   const { data: userData } = authClient.useSession();
   const utils = api.useUtils();
-  const isSavingRef = React.useRef(false);
   const { openResultModal, openErrorModal } = useChatContext();
+
+  const userName = userData?.user?.name ?? "Candidate";
+  const prompt = buildSystemPrompt(data, userName);
+
+  // ---- Queries & mutations ----
+
   const { data: oldMessages, isLoading: isLoadingMessages } =
     api.message.getMessages.useQuery(
-      {
-        interviewSessionId: data.id,
-      },
-      {
-        refetchInterval: 0,
-      },
+      { interviewSessionId: data.id },
+      { refetchInterval: 0 },
     );
-  const { messages, sendMessage, status, setMessages, error } = useChat({
-    id: data.id,
-  });
+
   const saveResultMutation = api.interview.saveInterviewResult.useMutation();
+
   const {
     data: existingResult,
     isLoading: isLoadingResult,
@@ -69,130 +91,102 @@ export function ChatSection({ data }: { data: InterviewSession }) {
     interviewSessionId: data.id,
   });
 
-  // Set state if results already exist in database
-  useEffect(() => {
-    if (existingResult && !hasResultsSaved) {
-      setHasResultsSaved(true);
-      setIsInterviewEnded(true);
-    }
-  }, [existingResult, hasResultsSaved, utils]);
+  // ---- Chat hook (handles error inline via onError) ----
 
-  // Handle chat errors
-  useEffect(() => {
-    if (error) {
+  const { messages, sendMessage, status, setMessages } = useChat({
+    id: data.id,
+    onError(error) {
       openErrorModal(error.message || "An error occurred during the chat");
-    }
-  }, [error, openErrorModal]);
+    },
+  });
+
+  // ---- Effect 1: Hydrate messages from DB on mount ----
 
   useEffect(() => {
-    if (oldMessages && oldMessages.length === 0) {
-      const prompt = systemPrompt
-        .replace("{{NAME}}", userData?.user?.name ?? "Candidate")
-        .replace("{{INTERVIEW_TYPE}}", data.type)
-        .replace("{{DIFFICULTY_LEVEL}}", data.difficulty)
-        .replace("{{CODING_LANGUAGE}}", data.language);
+    if (!oldMessages) return;
 
+    if (oldMessages.length === 0) {
       void sendMessage({
         role: "system",
         parts: [{ type: "text", text: prompt }],
       });
+      return;
     }
 
-    if (oldMessages && oldMessages.length > 0) {
-      const messages: UIMessage[] = oldMessages.map((message) => ({
-        id: message.id,
-        role: message.role,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
-        parts: message.parts as any,
-        metadata: message.metadata,
-      }));
+    const restored: UIMessage[] = oldMessages.map((msg) => ({
+      id: msg.id,
+      role: msg.role,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+      parts: msg.parts as any,
+      metadata: msg.metadata,
+    }));
 
-      setMessages([
-        {
-          id: "system-prompt",
-          role: "system",
-          parts: [
-            {
-              type: "text",
-              text: systemPrompt
-                .replace("{{NAME}}", userData?.user?.name ?? "Candidate")
-                .replace("{{INTERVIEW_TYPE}}", data.type)
-                .replace("{{DIFFICULTY_LEVEL}}", data.difficulty)
-                .replace("{{CODING_LANGUAGE}}", data.language),
-            },
-          ],
-        },
-        ...messages,
-      ]);
-    }
-  }, [oldMessages, setMessages, data, sendMessage, userData]);
+    setMessages([
+      {
+        id: "system-prompt",
+        role: "system",
+        parts: [{ type: "text", text: prompt }],
+      },
+      ...restored,
+    ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oldMessages]);
 
-  // Check for interview end marker and save results
+  // ---- Effect 2: Detect interview end + save results ----
+
   useEffect(() => {
+    // Sync from existing DB result
+    if (existingResult && !hasResultsSaved) {
+      setHasResultsSaved(true);
+      setIsInterviewEnded(true);
+      return;
+    }
+
     if (
       messages.length === 0 ||
       hasResultsSaved ||
       isSavingRef.current ||
       existingResult
-    )
+    ) {
       return;
-
-    // Get the last assistant message
-    const lastAssistantMessage = messages
-      .filter((msg) => msg.role === "assistant")
-      .pop();
-
-    if (!lastAssistantMessage) return;
-
-    // Check if any part contains the [INTERVIEW_ENDED] marker
-    const hasEndMarker = lastAssistantMessage.parts.some((part) => {
-      if (part.type === "text" && "text" in part) {
-        return part.text.includes("[INTERVIEW_ENDED]");
-      }
-      return false;
-    });
-
-    if (hasEndMarker) {
-      setIsInterviewEnded(true);
-
-      // Parse evaluation data from the last message
-      const fullText = lastAssistantMessage.parts
-        .filter((part) => part.type === "text" && "text" in part)
-        .map((part) => ("text" in part ? part.text : ""))
-        .join("\n");
-
-      const evaluationData = parseEvaluationData(fullText);
-
-      if (evaluationData && !hasResultsSaved && !isSavingRef.current) {
-        // Mark as saving to prevent duplicate calls
-        isSavingRef.current = true;
-
-        // Save to database
-        saveResultMutation
-          .mutateAsync({
-            interviewSessionId: data.id,
-            ...evaluationData,
-          })
-          .then(() => {
-            setHasResultsSaved(true);
-            isSavingRef.current = false;
-            // Invalidate and refetch the result query immediately
-            void utils.interview.getInterviewHistory.invalidate();
-            void refetchResult();
-          })
-          .catch((error) => {
-            console.error("Failed to save interview results:", error);
-            isSavingRef.current = false;
-            openErrorModal(
-              error instanceof Error
-                ? error.message
-                : "Failed to save interview results",
-            );
-          });
-      }
     }
+
+    const lastAssistant = [...messages]
+      .reverse()
+      .find((m) => m.role === "assistant");
+    if (!lastAssistant) return;
+
+    const fullText = extractTextFromParts(lastAssistant.parts);
+    if (!fullText.includes("[INTERVIEW_ENDED]")) return;
+
+    setIsInterviewEnded(true);
+
+    const evaluationData = parseEvaluationData(fullText);
+    if (!evaluationData) return;
+
+    isSavingRef.current = true;
+
+    saveResultMutation
+      .mutateAsync({ interviewSessionId: data.id, ...evaluationData })
+      .then(() => {
+        setHasResultsSaved(true);
+        isSavingRef.current = false;
+        void utils.interview.getInterviewHistory.invalidate();
+        void refetchResult();
+      })
+      .catch((err) => {
+        console.error("Failed to save interview results:", err);
+        isSavingRef.current = false;
+        openErrorModal(
+          err instanceof Error
+            ? err.message
+            : "Failed to save interview results",
+        );
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, data.id, hasResultsSaved, existingResult]);
+
+  // ---- Handlers ----
 
   const handleSendMessage = async (message: string) => {
     try {
@@ -200,23 +194,35 @@ export function ChatSection({ data }: { data: InterviewSession }) {
         role: "user",
         parts: [{ type: "text", text: message }],
       });
-    } catch (error) {
+    } catch (err) {
       openErrorModal(
-        error instanceof Error ? error.message : "Failed to send message",
+        err instanceof Error ? err.message : "Failed to send message",
       );
     }
   };
 
+  // ---- Derived state ----
+
+  const showResultButton =
+    hasResultsSaved ||
+    !!existingResult ||
+    isLoadingResult ||
+    saveResultMutation.isPending;
+
+  const resultButtonDisabled =
+    isLoadingResult || saveResultMutation.isPending || !existingResult;
+
+  // ---- Render ----
+
   return (
     <div className="mx-auto flex h-full max-w-4xl flex-col gap-4">
-      {/* chat box */}
       <ChatBox
         messages={messages}
         isLoading={status === "streaming" || isLoadingMessages}
         status={status}
         userImage={userData?.user?.image ?? null}
       />
-      {/* input box */}
+
       {!isInterviewEnded && (
         <div className="flex-shrink-0">
           <MultimodalInput
@@ -231,27 +237,14 @@ export function ChatSection({ data }: { data: InterviewSession }) {
 
       {isInterviewEnded && (
         <div className="mt-2 space-y-2">
-          {(Boolean(hasResultsSaved) ||
-            Boolean(existingResult) ||
-            Boolean(isLoadingResult) ||
-            Boolean(saveResultMutation.isPending)) && (
+          {showResultButton && (
             <Button
-              onClick={() => {
-                if (existingResult) {
-                  openResultModal(existingResult);
-                }
-              }}
+              onClick={() => existingResult && openResultModal(existingResult)}
               className="w-full"
               size="lg"
-              disabled={
-                isLoadingResult ||
-                saveResultMutation.isPending ||
-                !existingResult
-              }
+              disabled={resultButtonDisabled}
             >
-              {isLoadingResult ||
-              saveResultMutation.isPending ||
-              !existingResult ? (
+              {resultButtonDisabled ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Loading Results...
@@ -301,12 +294,17 @@ const ChatBox = ({
     (status === "submitted" || status === "streaming") &&
     !lastAssistantHasContent;
 
+  const isActive = status === "streaming" || status === "submitted";
+  const lastAssistantId = [...messages]
+    .reverse()
+    .find((m) => m.role === "assistant")?.id;
+
   return (
     <div
       style={{
         scrollbarWidth: "none",
       }}
-      className="bg-background max-h-screen flex-1 space-y-4 overflow-y-auto rounded-lg border-1 p-4"
+      className="bg-background max-h-screen flex-1 space-y-4 overflow-y-auto rounded-2xl border-1 p-4"
     >
       <Conversation className="h-full">
         <ConversationContent>
@@ -330,16 +328,18 @@ const ChatBox = ({
                         >
                           <Message from={message.role}>
                             {message.role === "assistant" && (
-                              <Avatar className="hidden size-8 shrink-0 lg:block">
-                                <AvatarImage
-                                  src="/assistant-avatar.png"
-                                  alt="Assistant"
-                                  className=""
-                                  style={{
-                                    filter:
-                                      "invert(58%) sepia(24%) saturate(749%) hue-rotate(179deg) brightness(96%) contrast(91%)",
-                                  }}
-                                />
+                              <Avatar
+                                className={cn(
+                                  "text-primary hidden size-8 shrink-0 lg:block",
+                                  {
+                                    "animate-[spin_2s_linear_infinite]":
+                                      isActive &&
+                                      message.id === lastAssistantId &&
+                                      !isWaitingForResponse,
+                                  },
+                                )}
+                              >
+                                <Logo />
                                 <AvatarFallback>AI</AvatarFallback>
                               </Avatar>
                             )}
@@ -372,20 +372,12 @@ const ChatBox = ({
           {isWaitingForResponse && (
             <div className="animate-in fade-in duration-200">
               <Message from="assistant">
-                <Avatar className="hidden size-8 shrink-0 lg:block">
-                  <AvatarImage
-                    src="/assistant-avatar.png"
-                    alt="Assistant"
-                    style={{
-                      filter:
-                        "invert(58%) sepia(24%) saturate(749%) hue-rotate(179deg) brightness(96%) contrast(91%)",
-                    }}
-                  />
+                <Avatar className="text-primary hidden size-8 shrink-0 animate-[spin_2s_linear_infinite] lg:block">
+                  <Logo />
                   <AvatarFallback>AI</AvatarFallback>
                 </Avatar>
-                <MessageContent className="max-w-full">
+                <MessageContent className="max-w-fit pr-6">
                   <div className="text-muted-foreground flex items-start gap-2">
-                    {/* <Loader className="size-4 animate-spin" /> */}
                     <span className="animate-blink text-sm">
                       {status === "submitted" ? "Thinking..." : "Typing..."}
                     </span>

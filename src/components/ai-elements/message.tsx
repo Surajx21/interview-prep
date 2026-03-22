@@ -25,8 +25,8 @@ const messageContentVariants = cva(
     variants: {
       variant: {
         contained: [
-          "max-w-[80%] px-4 py-3",
-          "group-[.is-user]:bg-primary group-[.is-user]:text-primary-foreground group-[.is-user]:rounded-br-none",
+          "max-w-[70%] px-4 py-3",
+          "group-[.is-user]:bg-primary group-[.is-user]:text-primary-foreground group-[.is-user]:rounded-br-none group-[.is-user]:pr-6",
           "group-[.is-assistant]:bg-secondary group-[.is-assistant]:text-foreground group-[.is-assistant]:rounded-bl-none",
         ],
         flat: [
@@ -50,7 +50,7 @@ export const MessageContent = ({
   variant,
   ...props
 }: MessageContentProps) => (
-  <div className="relative group-[.is-user]:flex group-[.is-user]:justify-end">
+  <div className="relative w-full leading-6 group-[.is-user]:flex group-[.is-user]:justify-end">
     <div
       className={cn(messageContentVariants({ variant, className }))}
       {...props}
