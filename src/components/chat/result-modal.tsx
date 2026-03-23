@@ -28,6 +28,12 @@ import { useChatContext } from "@/contexts/chat-context";
 import { Button } from "../ui/button";
 
 const clamp100 = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
+const NO_SCORE_PREFIX =
+  "No score awarded: the candidate did not provide any substantive answer.";
+
+function isNoScoreResult(result: InterviewResult): boolean {
+  return result.performanceSummary.startsWith(NO_SCORE_PREFIX);
+}
 
 function VerdictBadge({ verdict }: { verdict: InterviewResult["verdict"] }) {
   // Map verdicts to badge variants using theme tokens (no hard-coded colors)
@@ -160,30 +166,49 @@ function OverallGauge({ overallScore }: { overallScore: number }) {
 }
 
 function ResultSection({ result }: { result: InterviewResult }) {
+  const noScoreResult = isNoScoreResult(result);
+
   return (
     <div className="space-y-6">
       <VerdictBadge verdict={result.verdict} />
 
       <div className="space-y-6">
-        {/* <RadarAndBarCharts result={result} /> */}
+        {!noScoreResult ? (
+          <div className="space-y-6">
+            <OverallGauge overallScore={result.overallScore} />
 
-        <div className="space-y-6">
-          <OverallGauge overallScore={result.overallScore} />
-
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl font-semibold">
+                  Detailed Scores
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Breakdown by dimension
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <MetricList result={result} />
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="text-xl font-semibold">
-                Detailed Scores
+                Evaluation Status
               </CardTitle>
               <CardDescription className="text-sm">
-                Breakdown by dimension
+                No performance score was issued for this session
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <MetricList result={result} />
+              <p className="text-foreground leading-7 text-pretty">
+                The session ended without any substantive answer from the
+                candidate, so no performance score was awarded.
+              </p>
             </CardContent>
           </Card>
-        </div>
+        )}
 
         <Card>
           <CardHeader className="pb-4">
