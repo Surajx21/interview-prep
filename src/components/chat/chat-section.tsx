@@ -6,7 +6,7 @@ import { type ChatStatus, type UIMessage } from "ai";
 import { Loader2 } from "lucide-react";
 
 import { api } from "@/trpc/react";
-import { systemPrompt, parseEvaluationData, cn } from "@/lib/utils";
+import { parseEvaluationData, cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
 import { type InterviewSession } from "@/server/db/schema";
 import { useChatContext } from "@/contexts/chat-context";
@@ -33,18 +33,6 @@ function cleanMessageForDisplay(text: string): string {
     .trim();
 }
 
-/** Build the system prompt with session-specific values. */
-function buildSystemPrompt(
-  session: InterviewSession,
-  userName: string,
-): string {
-  return systemPrompt
-    .replace("{{NAME}}", userName)
-    .replace("{{INTERVIEW_TYPE}}", session.type)
-    .replace("{{DIFFICULTY_LEVEL}}", session.difficulty)
-    .replace("{{CODING_LANGUAGE}}", session.language);
-}
-
 /** Extract the full text content from a message's parts. */
 function extractTextFromParts(parts: UIMessage["parts"]): string {
   return parts
@@ -69,16 +57,12 @@ export function ChatSection({ data }: { data: InterviewSession }) {
   const utils = api.useUtils();
   const { openResultModal, openErrorModal } = useChatContext();
 
-  const userName = userData?.user?.name ?? "Candidate";
-  const prompt = buildSystemPrompt(data, userName);
-
   // ---- Queries & mutations ----
 
-  const { data: oldMessages, isLoading: isLoadingMessages } =
-    api.message.getMessages.useQuery(
-      { interviewSessionId: data.id },
-      { refetchInterval: 0 },
-    );
+  const { data: oldMessages } = api.message.getMessages.useQuery(
+    { interviewSessionId: data.id },
+    { refetchInterval: 0 },
+  );
 
   const saveResultMutation = api.interview.saveInterviewResult.useMutation();
 
@@ -107,7 +91,7 @@ export function ChatSection({ data }: { data: InterviewSession }) {
     if (oldMessages.length === 0) {
       void sendMessage({
         role: "system",
-        parts: [{ type: "text", text: prompt }],
+        parts: [{ type: "text", text: "__INTERVIEW_INIT__" }],
       });
       return;
     }
@@ -118,15 +102,7 @@ export function ChatSection({ data }: { data: InterviewSession }) {
       parts: msg.parts as UIMessage["parts"],
       metadata: msg.metadata,
     }));
-
-    setMessages([
-      {
-        id: "system-prompt",
-        role: "system",
-        parts: [{ type: "text", text: prompt }],
-      },
-      ...restored,
-    ]);
+    setMessages(restored);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [oldMessages]);
 
@@ -216,7 +192,6 @@ export function ChatSection({ data }: { data: InterviewSession }) {
     <div className="mx-auto flex h-full max-w-4xl flex-col gap-4">
       <ChatBox
         messages={messages}
-        isLoading={status === "streaming" || isLoadingMessages}
         status={status}
         userImage={userData?.user?.image ?? null}
       />
@@ -262,12 +237,10 @@ export function ChatSection({ data }: { data: InterviewSession }) {
 
 const ChatBox = ({
   messages,
-  isLoading,
   status,
   userImage,
 }: {
   messages: UIMessage[];
-  isLoading: boolean;
   status: ChatStatus;
   userImage: string | null;
 }) => {

@@ -3,6 +3,7 @@ import { env } from "@/env";
 import { api } from "@/trpc/server";
 import { db } from "@/server/db";
 import { interviewSession } from "@/server/db/schema";
+import { buildInterviewSystemPrompt } from "@/lib/interview-system-prompt";
 import { eq } from "drizzle-orm";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
@@ -15,6 +16,8 @@ interface ChatRequestBody {
   messages: UIMessage[];
   trigger: string;
 }
+
+const CLIENT_INIT_MARKER = "__INTERVIEW_INIT__";
 
 // Helper function to convert UIMessage to our database format
 function convertUIMessageToDbFormat(uiMessage: UIMessage) {
@@ -79,7 +82,12 @@ export async function POST(req: Request) {
 
     // Verify the session belongs to the authenticated user
     const [sessionRow] = await db
-      .select({ userId: interviewSession.userId })
+      .select({
+        userId: interviewSession.userId,
+        type: interviewSession.type,
+        difficulty: interviewSession.difficulty,
+        language: interviewSession.language,
+      })
       .from(interviewSession)
       .where(eq(interviewSession.id, interviewSessionId));
 
@@ -91,7 +99,6 @@ export async function POST(req: Request) {
       return new Response("Forbidden", { status: 403 });
     }
 
-    // Save the latest user message to the database
     const latestUserMessage = [...messages]
       .reverse()
       .find((msg) => msg.role === "user");
@@ -107,13 +114,60 @@ export async function POST(req: Request) {
       }
     }
 
+    const systemPrompt = buildInterviewSystemPrompt(
+      {
+        type: sessionRow.type,
+        difficulty: sessionRow.difficulty,
+        language: sessionRow.language,
+      },
+      session.user.name || "Candidate",
+    );
+
+    const sanitizedMessages = messages.filter((message) => {
+      if (message.role !== "system") {
+        return true;
+      }
+
+      const textContent = message.parts
+        .filter(
+          (part): part is Extract<(typeof message.parts)[number], { type: "text" }> =>
+            part.type === "text",
+        )
+        .map((part) => part.text)
+        .join("\n")
+        .trim();
+
+      return textContent.length > 0 && textContent !== CLIENT_INIT_MARKER;
+    });
+
+    const nonSystemMessages = sanitizedMessages.filter(
+      (message) => message.role !== "system",
+    );
+
+    const modelMessages: UIMessage[] = [
+      {
+        id: "server-system-prompt",
+        role: "system",
+        parts: [{ type: "text", text: systemPrompt }],
+      },
+      ...nonSystemMessages,
+    ];
+
+    if (nonSystemMessages.length === 0) {
+      modelMessages.push({
+        id: "server-initializer",
+        role: "user",
+        parts: [{ type: "text", text: "Begin the interview now." }],
+      });
+    }
+
     const gateway = createGateway({
       apiKey: env.AI_GATEWAY_API_KEY,
     });
 
     const result = streamText({
       model: gateway("openai/gpt-4.1-mini"),
-      messages: convertToModelMessages(messages),
+      messages: convertToModelMessages(modelMessages),
       onError: (error) => {
         console.error(error);
       },
