@@ -67,33 +67,13 @@ const ChatBoxItem = ({
     >
       <div
         className={cn(
-          "bg-card text-accent-foreground hover:border-primary/70 hover:bg-primary/5 flex cursor-pointer flex-col gap-3 rounded-md border-1 p-4 transition-all duration-100",
+          "bg-card/80 text-accent-foreground hover:border-primary/70 hover:bg-card flex cursor-pointer flex-col gap-3 rounded-md border-1 p-4 transition-all duration-100",
 
-          currentPath === id ? "border-primary" : "",
+          currentPath === id ? "border-primary bg-card" : "",
         )}
       >
         {/* Content */}
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          {/* Left side icon */}
-          <div className="flex-shrink-0">
-            <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-md">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                className="text-primary"
-              >
-                <path
-                  d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2h3a1 1 0 011 1v11a3 3 0 01-3 3H7a3 3 0 01-3-3V7a1 1 0 011-1h3z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-          </div>
           {/* Title */}
           <div className="w-full space-y-1">
             <div className="truncate text-sm font-medium">
