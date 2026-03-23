@@ -7,6 +7,7 @@ import {
   pgEnum,
   json,
   integer,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -125,22 +126,31 @@ export const interviewSession = pgTable("interview_session", {
 });
 
 
-export const messageSchema = pgTable("message", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  uiMessageId: text("ui_message_id").notNull(), // The ID from UIMessage
-  interviewSessionId: uuid("interview_session_id")
-    .notNull()
-    .references(() => interviewSession.id, { onDelete: "cascade" }),
-  role: messageRoleEnum("role").notNull(),
-  parts: json("parts").notNull(), // Array of message parts
-  metadata: json("metadata"), // Optional metadata object
-  sequenceNumber: integer("sequence_number").notNull(), // Order within the conversation
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
+export const messageSchema = pgTable(
+  "message",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    uiMessageId: text("ui_message_id").notNull(), // The ID from UIMessage
+    interviewSessionId: uuid("interview_session_id")
+      .notNull()
+      .references(() => interviewSession.id, { onDelete: "cascade" }),
+    role: messageRoleEnum("role").notNull(),
+    parts: json("parts").notNull(), // Array of message parts
+    metadata: json("metadata"), // Optional metadata object
+    sequenceNumber: integer("sequence_number").notNull(), // Order within the conversation
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("message_session_ui_message_id_idx").on(
+      table.interviewSessionId,
+      table.uiMessageId,
+    ),
+  ],
+);
 
 
 // Interview Result Schema

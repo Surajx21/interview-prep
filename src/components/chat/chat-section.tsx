@@ -53,6 +53,7 @@ export function ChatSection({ data }: { data: InterviewSession }) {
   const [isInterviewEnded, setIsInterviewEnded] = useState(false);
   const [hasResultsSaved, setHasResultsSaved] = useState(false);
   const isSavingRef = useRef(false);
+  const hasBootstrappedChatRef = useRef(false);
 
   const { data: userData } = authClient.useSession();
   const utils = api.useUtils();
@@ -87,7 +88,9 @@ export function ChatSection({ data }: { data: InterviewSession }) {
   // ---- Effect 1: Hydrate messages from DB on mount ----
 
   useEffect(() => {
-    if (!oldMessages) return;
+    if (!oldMessages || hasBootstrappedChatRef.current) return;
+
+    hasBootstrappedChatRef.current = true;
 
     if (oldMessages.length === 0) {
       void sendMessage({

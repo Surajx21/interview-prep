@@ -1,6 +1,6 @@
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { messageSchema, type UIMessage } from "@/server/db/schema";
-import { asc, eq, max } from "drizzle-orm";
+import { and, asc, eq, max } from "drizzle-orm";
 import type { db as dbType } from "@/server/db";
 import z from "zod/v4";
 
@@ -33,8 +33,16 @@ export const messageRouter = createTRPCRouter({
         .where(eq(messageSchema.interviewSessionId, input.interviewSessionId))
         .orderBy(asc(messageSchema.sequenceNumber), asc(messageSchema.createdAt));
 
+      const dedupedMessages = messages.filter((message, index, allMessages) => {
+        return (
+          allMessages.findIndex(
+            (candidate) => candidate.uiMessageId === message.uiMessageId,
+          ) === index
+        );
+      });
+
       // Convert database messages back to UIMessage format
-      return messages.map((msg) => ({
+      return dedupedMessages.map((msg) => ({
         id: msg.uiMessageId,
         role: msg.role,
         parts: msg.parts as UIMessage['parts'],
@@ -60,6 +68,27 @@ export const messageRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      const [existingMessage] = await ctx.db
+        .select({
+          id: messageSchema.id,
+          uiMessageId: messageSchema.uiMessageId,
+        })
+        .from(messageSchema)
+        .where(
+          and(
+            eq(messageSchema.interviewSessionId, input.interviewSessionId),
+            eq(messageSchema.uiMessageId, input.uiMessage.id),
+          ),
+        )
+        .limit(1);
+
+      if (existingMessage) {
+        return {
+          id: existingMessage.id,
+          uiMessageId: existingMessage.uiMessageId,
+        };
+      }
+
       // Get the next sequence number for this interview session
       const nextSequenceNumber = await getNextSequenceNumber(ctx.db, input.interviewSessionId);
 
@@ -74,12 +103,39 @@ export const messageRouter = createTRPCRouter({
           metadata: input.uiMessage.metadata,
           sequenceNumber: nextSequenceNumber,
         })
+        .onConflictDoNothing({
+          target: [
+            messageSchema.interviewSessionId,
+            messageSchema.uiMessageId,
+          ],
+        })
         .returning({ id: messageSchema.id });
 
-      if (!message) {
+      if (message) {
+        return { id: message.id, uiMessageId: input.uiMessage.id };
+      }
+
+      const [dedupedMessage] = await ctx.db
+        .select({
+          id: messageSchema.id,
+          uiMessageId: messageSchema.uiMessageId,
+        })
+        .from(messageSchema)
+        .where(
+          and(
+            eq(messageSchema.interviewSessionId, input.interviewSessionId),
+            eq(messageSchema.uiMessageId, input.uiMessage.id),
+          ),
+        )
+        .limit(1);
+
+      if (!dedupedMessage) {
         throw new Error("Failed to insert message");
       }
 
-      return { id: message.id, uiMessageId: input.uiMessage.id };
+      return {
+        id: dedupedMessage.id,
+        uiMessageId: dedupedMessage.uiMessageId,
+      };
     }),
 });
