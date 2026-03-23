@@ -1,4 +1,10 @@
+import { type Metadata } from "next";
 import Logo from "@/components/layout/header/logo";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+};
+
 
 function Page() {
   return (

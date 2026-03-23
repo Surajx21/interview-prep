@@ -77,7 +77,7 @@ export const interviewRouter = createTRPCRouter({
   saveInterviewResult: protectedProcedure
     .input(
       z.object({
-        interviewSessionId: z.string().uuid(),
+        interviewSessionId: z.uuid(),
         accuracyScore: z.number().min(0).max(100),
         communicationScore: z.number().min(0).max(100),
         problemSolvingScore: z.number().min(0).max(100),
@@ -89,6 +89,16 @@ export const interviewRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       return await ctx.db.transaction(async (tx) => {
+        // Verify the session belongs to the authenticated user before saving
+        const [ownedSession] = await tx
+          .select({ id: interviewSession.id })
+          .from(interviewSession)
+          .where(eq(interviewSession.id, input.interviewSessionId));
+
+        if (!ownedSession) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Interview session not found" });
+        }
+
         // Check if result already exists
         const existing = await tx
           .select()
@@ -150,15 +160,26 @@ export const interviewRouter = createTRPCRouter({
   getInterviewResult: protectedProcedure
     .input(
       z.object({
-        interviewSessionId: z.string().uuid(),
+        interviewSessionId: z.uuid(),
       }),
     )
     .query(async ({ input, ctx }) => {
+      // Join with interviewSession to enforce ownership
       const result = await ctx.db
-        .select()
+        .select({ result: interviewResult, userId: interviewSession.userId })
         .from(interviewResult)
+        .innerJoin(
+          interviewSession,
+          eq(interviewResult.interviewSessionId, interviewSession.id),
+        )
         .where(eq(interviewResult.interviewSessionId, input.interviewSessionId));
 
-      return result[0] ?? null;
+      if (!result[0]) return null;
+
+      if (result[0].userId !== ctx.session.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
+      }
+
+      return result[0].result;
     }),
 });

@@ -64,7 +64,7 @@ export function MultimodalInput({
   const hasText = input.trim().length > 0;
 
   return (
-    <div className="group border-border bg-card relative rounded-2xl border transition-shadow">
+    <div className="group border-border bg-card relative rounded-(--radius) border transition-shadow">
       {/* Subtle top border accent on focus */}
       <div className="relative flex items-end gap-2 p-2">
         <div className="relative flex-1">

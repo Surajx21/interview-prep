@@ -1,5 +1,5 @@
 import { createTRPCRouter, protectedProcedure } from "../trpc";
-import { messageSchema, messagePartsSchema, type UIMessage } from "@/server/db/schema";
+import { messageSchema, type UIMessage } from "@/server/db/schema";
 import { asc, eq, max } from "drizzle-orm";
 import type { db as dbType } from "@/server/db";
 import z from "zod/v4";
@@ -23,7 +23,7 @@ export const messageRouter = createTRPCRouter({
   getMessages: protectedProcedure
     .input(
       z.object({
-        interviewSessionId: z.string(),
+        interviewSessionId: z.uuid(),
       }),
     )
     .query(async ({ input, ctx }) => {
@@ -32,7 +32,7 @@ export const messageRouter = createTRPCRouter({
         .from(messageSchema)
         .where(eq(messageSchema.interviewSessionId, input.interviewSessionId))
         .orderBy(asc(messageSchema.sequenceNumber), asc(messageSchema.createdAt));
-      
+
       // Convert database messages back to UIMessage format
       return messages.map((msg) => ({
         id: msg.uiMessageId,
@@ -45,7 +45,7 @@ export const messageRouter = createTRPCRouter({
   insertUIMessage: protectedProcedure
     .input(
       z.object({
-        interviewSessionId: z.string(),
+        interviewSessionId: z.uuid(),
         uiMessage: z.object({
           id: z.string(),
           role: z.enum(["user", "assistant", "system"]),
@@ -80,52 +80,6 @@ export const messageRouter = createTRPCRouter({
         throw new Error("Failed to insert message");
       }
 
-      // Insert individual parts for better querying
-      const messageParts = input.uiMessage.parts.map((part, index) => ({
-        messageId: message.id,
-        type: part.type,
-        content: part.text ?? part.url ?? '',
-        order: index,
-        metadata: part.metadata,
-      }));
-
-      if (messageParts.length > 0) {
-        await ctx.db.insert(messagePartsSchema).values(messageParts);
-      }
-
       return { id: message.id, uiMessageId: input.uiMessage.id };
-    }),
-
-  // Legacy method for backward compatibility
-  insertMessage: protectedProcedure
-    .input(
-      z.object({
-        interviewSessionId: z.string(),
-        content: z.string(),
-        role: z.enum(["user", "assistant", "system"]),
-      }),
-    )
-    .mutation(async ({ input, ctx }) => {
-      // Get the next sequence number for this interview session
-      const nextSequenceNumber = await getNextSequenceNumber(ctx.db, input.interviewSessionId);
-      const uiMessageId = `legacy-${crypto.randomUUID()}`;
-      
-      const [message] = await ctx.db
-        .insert(messageSchema)
-        .values({
-          uiMessageId,
-          interviewSessionId: input.interviewSessionId,
-          role: input.role,
-          parts: [{ type: "text", text: input.content }],
-          metadata: null,
-          sequenceNumber: nextSequenceNumber,
-        })
-        .returning({ id: messageSchema.id });
-
-      if (!message) {
-        throw new Error("Failed to insert message");
-      }
-
-      return { id: message.id, uiMessageId };
     }),
 });

@@ -124,15 +124,6 @@ export const interviewSession = pgTable("interview_session", {
     .notNull(),
 });
 
-// UIMessage parts schema
-export const messagePartTypeEnum = pgEnum("message_part_type", [
-  "text",
-  "reasoning",
-  "source-url",
-  "image",
-  "tool",
-  "tool-result",
-]);
 
 export const messageSchema = pgTable("message", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -151,18 +142,6 @@ export const messageSchema = pgTable("message", {
     .notNull(),
 });
 
-// Individual message parts table for better querying
-export const messagePartsSchema = pgTable("message_parts", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  messageId: uuid("message_id")
-    .notNull()
-    .references(() => messageSchema.id, { onDelete: "cascade" }),
-  type: messagePartTypeEnum("type").notNull(),
-  content: text("content").notNull(),
-  order: integer("order").notNull(), // Order of parts within the message
-  metadata: json("metadata"), // Additional metadata for specific part types
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
 
 // Interview Result Schema
 export const interviewResult = pgTable("interview_result", {
@@ -190,8 +169,6 @@ export type InterviewSession = typeof interviewSession.$inferSelect;
 export type NewInterviewSession = typeof interviewSession.$inferInsert;
 export type Message = typeof messageSchema.$inferSelect;
 export type NewMessage = typeof messageSchema.$inferInsert;
-export type MessagePart = typeof messagePartsSchema.$inferSelect;
-export type NewMessagePart = typeof messagePartsSchema.$inferInsert;
 export type InterviewResult = typeof interviewResult.$inferSelect;
 export type NewInterviewResult = typeof interviewResult.$inferInsert;
 

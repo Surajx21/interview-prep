@@ -75,43 +75,35 @@ export async function POST(req: Request) {
       return new Response("Invalid request body", { status: 400 });
     }
 
-    const { messages } = data;
-
-    // Extract interview session ID from metadata
-    const interviewSessionId = data.id;
-
-    if (!interviewSessionId) {
-      return new Response("Missing interview session ID", { status: 400 });
-    }
+    const { messages, id: interviewSessionId } = data;
 
     // Verify the session belongs to the authenticated user
-    const sessionRows = await db
+    const [sessionRow] = await db
       .select({ userId: interviewSession.userId })
       .from(interviewSession)
       .where(eq(interviewSession.id, interviewSessionId));
 
-    if (!sessionRows[0]) {
+    if (!sessionRow) {
       return new Response("Interview session not found", { status: 404 });
     }
 
-    if (sessionRows[0].userId !== session.user.id) {
+    if (sessionRow.userId !== session.user.id) {
       return new Response("Forbidden", { status: 403 });
     }
 
-    // Save user message to database
-    const userMessages = messages.filter((msg) => msg.role === "user");
-    if (userMessages.length > 0) {
-      const latestUserMessage = userMessages[userMessages.length - 1];
-      if (latestUserMessage) {
-        try {
-          const uiMessageForDb = convertUIMessageToDbFormat(latestUserMessage);
-          await api.message.insertUIMessage({
-            interviewSessionId,
-            uiMessage: uiMessageForDb,
-          });
-        } catch (error) {
-          console.error("Error saving user message:", error);
-        }
+    // Save the latest user message to the database
+    const latestUserMessage = [...messages]
+      .reverse()
+      .find((msg) => msg.role === "user");
+
+    if (latestUserMessage) {
+      try {
+        await api.message.insertUIMessage({
+          interviewSessionId,
+          uiMessage: convertUIMessageToDbFormat(latestUserMessage),
+        });
+      } catch (error) {
+        console.error("Error saving user message:", error);
       }
     }
 
@@ -129,7 +121,7 @@ export async function POST(req: Request) {
         // Save assistant response to database
         try {
           const assistantMessage = {
-            id: `assistant-${Date.now()}`,
+            id: crypto.randomUUID(),
             role: "assistant" as const,
             parts: [{ type: "text" as const, text: result.text }],
             metadata: { interviewSessionId },

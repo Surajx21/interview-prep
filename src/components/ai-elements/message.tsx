@@ -27,7 +27,7 @@ const messageContentVariants = cva(
         contained: [
           "max-w-[70%] px-4 py-3",
           "group-[.is-user]:bg-primary group-[.is-user]:text-primary-foreground group-[.is-user]:rounded-br-none group-[.is-user]:pr-6",
-          "group-[.is-assistant]:bg-secondary group-[.is-assistant]:text-foreground group-[.is-assistant]:rounded-bl-none",
+          "group-[.is-assistant]:bg-card group-[.is-assistant]:text-foreground group-[.is-assistant]:rounded-bl-none",
         ],
         flat: [
           "group-[.is-user]:max-w-[80%] group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
@@ -61,7 +61,7 @@ export const MessageContent = ({
       className={cn(
         "b-0 absolute bottom-0 z-50 border-r-[5px] border-l-[0px] border-transparent",
 
-        "group-[.is-assistant]:border-secondary group-[.is-assistant]:-left-[5px] group-[.is-assistant]:border-t-[5px] group-[.is-assistant]:border-b-[0px] group-[.is-assistant]:border-t-transparent",
+        "group-[.is-assistant]:border-card group-[.is-assistant]:-left-[5px] group-[.is-assistant]:border-t-[5px] group-[.is-assistant]:border-b-[0px] group-[.is-assistant]:border-t-transparent",
 
         "group-[.is-user]:border-primary group-[.is-user]:-right-[4px] group-[.is-user]:border-t-[0px] group-[.is-user]:border-b-[5px] group-[.is-user]:border-r-transparent",
       )}

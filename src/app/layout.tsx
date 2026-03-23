@@ -1,5 +1,5 @@
 import "@/styles/globals.css";
-import { type Metadata } from "next";
+import { type Metadata, type Viewport } from "next";
 import {
   IBM_Plex_Mono,
   Libre_Baskerville,
@@ -36,6 +36,13 @@ export const metadata: Metadata = {
     "Practice technical, HR, and aptitude interviews with an AI interviewer. Get instant feedback, scores, and improvement tips.",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "white" },
+    { media: "(prefers-color-scheme: dark)", color: "black" },
+  ],
+};
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -48,9 +55,9 @@ export default function RootLayout({
           <ThemeProvider attribute="class" defaultTheme="dark">
             {children}
             <Toaster />
+            <SpeedInsights />
           </ThemeProvider>
         </TRPCReactProvider>
-        <SpeedInsights />
       </body>
     </html>
   );

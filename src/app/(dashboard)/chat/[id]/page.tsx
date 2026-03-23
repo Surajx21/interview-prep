@@ -2,6 +2,27 @@ import { ChatSection } from "@/components/chat/chat-section";
 import { api } from "@/trpc/server";
 import { isValidUUID } from "@/lib/utils";
 import { ErrorState } from "@/components/ui/error-state";
+import { type Metadata } from "next";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  if (!isValidUUID(id)) {
+    return { title: "Invalid Interview" };
+  }
+  const data = await api.interview
+    .getInterviewSession({ id })
+    .catch(() => null);
+  if (!data) {
+    return { title: "Interview Not Found" };
+  }
+  return {
+    title: `${data.type.charAt(0).toUpperCase() + data.type.slice(1)} Interview – ${data.difficulty}`,
+  };
+}
 
 async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -17,7 +38,9 @@ async function ChatPage({ params }: { params: Promise<{ id: string }> }) {
     );
   }
 
-  const data = await api.interview.getInterviewSession({ id });
+  const data = await api.interview
+    .getInterviewSession({ id })
+    .catch(() => null);
 
   if (!data) {
     return (
