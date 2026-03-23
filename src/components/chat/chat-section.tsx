@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { api } from "@/trpc/react";
 import { parseEvaluationData, cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
+import { getInitials, resolveUserAvatarImage } from "@/lib/avatar";
 import { type InterviewSession } from "@/server/db/schema";
 import { useChatContext } from "@/contexts/chat-context";
 
@@ -193,6 +194,7 @@ export function ChatSection({ data }: { data: InterviewSession }) {
       <ChatBox
         messages={messages}
         status={status}
+        userName={userData?.user?.name ?? null}
         userImage={userData?.user?.image ?? null}
       />
 
@@ -238,10 +240,12 @@ export function ChatSection({ data }: { data: InterviewSession }) {
 const ChatBox = ({
   messages,
   status,
+  userName,
   userImage,
 }: {
   messages: UIMessage[];
   status: ChatStatus;
+  userName: string | null;
   userImage: string | null;
 }) => {
   // Check if we should show the loading indicator
@@ -320,10 +324,15 @@ const ChatBox = ({
                             {message.role === "user" && (
                               <Avatar className="hidden size-8 shrink-0 lg:block">
                                 <AvatarImage
-                                  src={userImage ?? "/user-avatar.png"}
+                                  src={resolveUserAvatarImage(
+                                    userName,
+                                    userImage,
+                                  )}
                                   alt="User"
                                 />
-                                <AvatarFallback>U</AvatarFallback>
+                                <AvatarFallback>
+                                  {getInitials(userName)}
+                                </AvatarFallback>
                               </Avatar>
                             )}
                           </Message>

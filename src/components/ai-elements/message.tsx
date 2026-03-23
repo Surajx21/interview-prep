@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getInitials, resolveUserAvatarImage } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
 import type { UIMessage } from "ai";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -85,7 +86,11 @@ export const MessageAvatar = ({
   ...props
 }: MessageAvatarProps) => (
   <Avatar className={cn("ring-border size-8 ring-1", className)} {...props}>
-    <AvatarImage alt="" className="mt-0 mb-0" src={src} />
-    <AvatarFallback>{name?.slice(0, 2) ?? "ME"}</AvatarFallback>
+    <AvatarImage
+      alt=""
+      className="mt-0 mb-0"
+      src={resolveUserAvatarImage(name, src)}
+    />
+    <AvatarFallback>{getInitials(name) || "ME"}</AvatarFallback>
   </Avatar>
 );

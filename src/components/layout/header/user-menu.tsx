@@ -31,6 +31,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getInitials, resolveUserAvatarImage } from "@/lib/avatar";
 
 export default function UserMenu() {
   const user = authClient.useSession();
@@ -43,16 +44,13 @@ export default function UserMenu() {
             <Button variant="ghost" className="h-auto p-0 hover:bg-transparent">
               <Avatar className="size-9">
                 <AvatarImage
-                  src={user.data?.user.image ?? ""}
+                  src={resolveUserAvatarImage(
+                    user.data?.user.name,
+                    user.data?.user.image,
+                  )}
                   alt="Profile image"
                 />
-                <AvatarFallback>
-                  {user.data?.user.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()}
-                </AvatarFallback>
+                <AvatarFallback>{getInitials(user.data?.user.name)}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>

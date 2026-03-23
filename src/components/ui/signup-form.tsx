@@ -26,6 +26,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { createAvatarUrl } from "@/lib/avatar";
 
 const signupSchema = z
   .object({
@@ -73,7 +74,7 @@ export function SignupForm({
       name: values.name,
       email: values.email,
       password: values.password,
-      image: `https://avatar.iran.liara.run/public/boy?username=${values.name.split(" ").join("")}`,
+      image: createAvatarUrl(values.name),
       fetchOptions: {
         onSuccess: () => {
           toast.success("Account created successfully!");

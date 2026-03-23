@@ -13,9 +13,9 @@ const config: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "avatar.iran.liara.run",
+        hostname: "api.dicebear.com",
         port: "",
-        pathname: "/public/**",
+        pathname: "/9.x/**",
       },
     ],
   },

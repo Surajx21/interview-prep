@@ -21,6 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { getInitials, resolveUserAvatarImage } from "@/lib/avatar";
 
 const profileSchema = z
   .object({
@@ -146,11 +147,11 @@ export default function Profile() {
             <div className="flex items-center space-x-4">
               <Avatar className="h-20 w-20">
                 <AvatarImage
-                  src={profile?.image ?? ""}
+                  src={resolveUserAvatarImage(profile?.name, profile?.image)}
                   alt={profile?.name ?? ""}
                 />
                 <AvatarFallback className="text-lg">
-                  {profile?.name?.charAt(0).toUpperCase() ?? "U"}
+                  {getInitials(profile?.name)}
                 </AvatarFallback>
               </Avatar>
               <div>

@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { user } from "@/server/db/schema";
 import { auth } from "@/lib/auth";
+import { createAvatarUrl } from "@/lib/avatar";
 
 export const profileRouter = createTRPCRouter({
   get: protectedProcedure.query(async ({ ctx }) => {
@@ -74,7 +75,10 @@ export const profileRouter = createTRPCRouter({
         updatedAt: new Date(),
       };
 
-      if (name !== undefined) updateData.name = name;
+      if (name !== undefined) {
+        updateData.name = name;
+        updateData.image = createAvatarUrl(name);
+      }
 
       await ctx.db
         .update(user)
