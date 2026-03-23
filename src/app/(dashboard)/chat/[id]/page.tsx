@@ -1,6 +1,5 @@
 import { ChatSection } from "@/components/chat/chat-section";
 import { api } from "@/trpc/server";
-import React from "react";
 import { isValidUUID } from "@/lib/utils";
 import { ErrorState } from "@/components/ui/error-state";
 

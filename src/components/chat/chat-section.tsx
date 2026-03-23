@@ -13,7 +13,6 @@ import { useChatContext } from "@/contexts/chat-context";
 
 import { MultimodalInput } from "./multimodal-input";
 import ResultsModal from "./result-modal";
-import { Skeleton } from "../ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
 import {
@@ -272,10 +271,6 @@ const ChatBox = ({
   status: ChatStatus;
   userImage: string | null;
 }) => {
-  if (isLoading && messages.length === 0) {
-    return <Skeleton className="h-full w-full" />;
-  }
-
   // Check if we should show the loading indicator
   // Show it when status is submitted/streaming AND the assistant hasn't sent meaningful content yet
   const lastMessage = messages[messages.length - 1];
@@ -303,7 +298,7 @@ const ChatBox = ({
       style={{
         scrollbarWidth: "none",
       }}
-      className="bg-background max-h-screen flex-1 space-y-4 overflow-y-auto rounded-2xl border-1 p-4"
+      className="bg-background max-h-screen flex-1 space-y-4 overflow-y-auto rounded-(--radius) border-1 p-4"
     >
       <Conversation className="h-full">
         <ConversationContent>
