@@ -17,29 +17,6 @@ export interface InterviewConfig {
   type: InterviewType | "";
 }
 
-// Message Types
-export type MessageRole = "user" | "assistant" | "system";
-
-export interface Message {
-  id: string;
-  role: MessageRole;
-  content: string;
-  timestamp: Date;
-  metadata?: Record<string, unknown>;
-}
-
-// Session Types
-export interface ChatSession {
-  id: string;
-  config: InterviewConfig;
-  messages: Message[];
-  startedAt: Date;
-  endedAt?: Date;
-  currentQuestion: number;
-  totalQuestions: number;
-  isActive: boolean;
-}
-
 // Language Option
 export interface LanguageOption {
   value: InterviewLanguage;
