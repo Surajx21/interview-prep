@@ -1,0 +1,15 @@
+name: Keep Supabase Alive
+on:
+  schedule:
+    - cron: '0 0 * * 0,4' # Every Sunday and Thursday
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send API Request
+        run: |
+          curl -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/?select=*" \
+          -H "apikey: ${{ secrets.SUPABASE_KEY }}" \
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_KEY }}"
